@@ -95,4 +95,9 @@ public class Character : MonoBehaviour
 
     }
 
+    public void ApplyDamage(Character shooter, Transform hit, float damage)
+    {
+
+    }
+
 }
