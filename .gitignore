@@ -1,7 +1,9 @@
 # =====================
-# Unity standard ignore
+# Unity Professional .gitignore
+# Optimized for GitHub portfolios
 # =====================
 
+# Core Unity folders
 [Ll]ibrary/
 [Tt]emp/
 [Oo]bj/
@@ -10,55 +12,84 @@
 [Ll]ogs/
 [Mm]emoryCaptures/
 [Rr]ecordings/
+UserSettings/
 
-# User settings
-/[Uu]ser[Ss]ettings/
-*.csproj
-*.unityproj
-*.sln
-*.suo
-*.tmp
-*.user
-*.userprefs
-*.pidb
-*.booproj
-*.svd
-*.pdb
-*.mdb
-*.opendb
-*.VC.db
-
-# Visual Studio / Rider
-.vs/
-/[Aa]ssets/Plugins/Editor/JetBrains*
-*.DotSettings.user
-.gradle/
-
-# Unity generated meta files
-*.pidb.meta
-*.pdb.meta
-*.mdb.meta
-
-# Crash reports
-sysinfo.txt
-mono_crash.*
-
-# Builds / Packages
+# Build artifacts
 *.apk
 *.aab
 *.unitypackage
 *.unitypackage.meta
 *.app
+*.exe
+*.zip
+*.rar
 
-# Addressables
+# Unity generated files
+*.pidb
+*.pdb
+*.mdb
+*.pidb.meta
+*.pdb.meta
+*.mdb.meta
+*.opendb
+*.tmp
+*.svd
+*.booproj
+
+# Visual Studio / Rider / IDE stuff
+.vs/
+.idea/
+.gradle/
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.user
+*.userprefs
+*.DotSettings.user
+/[Aa]ssets/Plugins/Editor/JetBrains*
+
+# Crash and debug logs
+sysinfo.txt
+*.log
+mono_crash.*
+
+# Addressables / Auto-generated
 /Assets/AddressableAssetsData/*/*.bin*
 /Assets/Addressables_Temp*
-
-# Visual Scripting generated files
 /Assets/Unity.VisualScripting.Generated/
+Assets/StreamingAssets/aa*
+Assets/InitTestScene*.unity*
 
-# Test scenes
-/Assets/InitTestScene*.unity*
+# Asset Store tools (optional)
+/Assets/AssetStoreTools*
 
-# Optional: Ignore asset store tools
-#/Assets/AssetStoreTools*
+# =====================
+# Large source files to avoid GitHub 100MB limit
+# =====================
+*.psd
+*.tif
+*.tiff
+*.exr
+*.hdr
+*.blend
+*.fbx
+*.obj
+*.3ds
+*.max
+*.ma
+*.mb
+*.wav
+*.aiff
+*.aif
+*.mp4
+*.mov
+*.avi
+
+# =====================
+# OS / Editor junk
+# =====================
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini

@@ -1220,6 +1220,16 @@ PrefabInstance:
       propertyPath: GroundLayers.m_Bits
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 6982812146204527121, guid: 64dce48905ffd9b4293e595fa6941544,
+        type: 3}
+      propertyPath: m_WarningMessage
+      value: "\nBinding warning: Some generic clip(s) animate transforms that are
+        already bound by a Humanoid avatar. These transforms can only be changed
+        by Humanoid clips.\n\tTransform 'Left_LowerArm'\n\tTransform 'Chest'\n\tTransform
+        'Spine'\n\tTransform 'Left_Hand'\n\tTransform 'Left_UpperArm'\n\tTransform
+        'Left_LowerArm'\n\tTransform 'Chest'\n\tTransform 'Spine'\n\tTransform 'Left_Hand'\n\tTransform
+        'Left_UpperArm'\n\tand more ..."
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:
@@ -1697,6 +1707,17 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 954675256667837465, guid: c5f2a423aadd47c47872c4553e52dfbf,
+        type: 3}
+      propertyPath: _items.Array.size
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 954675256667837465, guid: c5f2a423aadd47c47872c4553e52dfbf,
+        type: 3}
+      propertyPath: '_items.Array.data[2]'
+      value: 
+      objectReference: {fileID: 746797804944066935, guid: 001f25f780067014b8246872b046f87a,
+        type: 3}
     - target: {fileID: 1441048143865535189, guid: c5f2a423aadd47c47872c4553e52dfbf,
         type: 3}
       propertyPath: _camera

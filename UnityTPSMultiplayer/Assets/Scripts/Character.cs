@@ -1,19 +1,26 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.TextCore.Text;
 
 public class Character : MonoBehaviour
 {
     [SerializeField] private Transform _weaponHolder = null;
 
     private Weapon _weapon = null; public Weapon weapon { get { return _weapon; } }
+    private Ammo _ammo = null; public Ammo ammo { get { return _ammo; } }
     private List<Item> _items = new List<Item>();
+    private Animator _animator = null;
     private RigManager _rigManager = null;
+    private Weapon _weaponToEquip = null;
+    private bool _reloading = false; public bool reloading { get { return _reloading; } }
+    private bool _switchingWeapon = false; public bool switchingWeapon { get { return _switchingWeapon; } }
 
     private void Awake()
     {
         _rigManager = GetComponent<RigManager>();
-        Initialize(new Dictionary<string, int> { { "AKM", 1 } });
+        _animator = GetComponent<Animator>();
+        Initialize(new Dictionary<string, int> { { "Scar", 1 }, { "AKM", 1 }, { "7.62x39mm", 100 } });
     }
 
     public void Initialize(Dictionary<string, int> items)
@@ -29,7 +36,7 @@ public class Character : MonoBehaviour
                     for (int i = 1; i <= itemData.Value; i++)
                     {
                         bool done = false;
-                        Item item = Instantiate(prefab,transform);
+                        Item item = Instantiate(prefab, transform);
 
                         if (item.GetType() == typeof(Weapon))
                         {
@@ -60,37 +67,151 @@ public class Character : MonoBehaviour
             }
             if (firstWeaponIndex >= 0 && _weapon == null)
             {
-                EquipWeapon((Weapon)_items[firstWeaponIndex]);
+                _weaponToEquip = (Weapon)_items[firstWeaponIndex];
+                OnEquip();
             }
         }
     }
 
+    public void ChangeWeapon(float direction)
+    {
+        int x = direction > 0 ? 1 : direction < 0 ? -1 : 0;
+        if (x != 0 && _switchingWeapon == false)
+        {
+            int before = -1;
+            int current = -1;
+            int after = -1;
+            for (int i = 0; i < _items.Count; i++)
+            {
+                if (_items[i] != null && _items[i].GetType() == typeof(Weapon))
+                {
+                    if (_items[i].gameObject == weapon.gameObject)
+                    {
+                        current = i;
+                    }
+                    else
+                    {
+                        if (current < 0 && before < 0)
+                        {
+                            before = i;
+                        }
+                        if (current >= 0 && after < 0)
+                        {
+                            after = i;
+                        }
+                    }
+                }
+            }
+            int target = -1;
+            if (x > 0)
+            {
+                if (after >= 0)
+                {
+                    target = after;
+                }
+                else if (before >= 0)
+                {
+                    target = before;
+                }
+
+            }
+            else
+            {
+                if (before  >= 0)
+                {
+                    target = before;
+                }
+                else if (after >= 0)
+                {
+                    target = after;
+                }
+            }
+            if (target >= 0)
+            {
+                EquipWeapon((Weapon)_items[target]);
+            }
+        }
+    }
+
+
     public void EquipWeapon(Weapon weapon)
     {
+        if (_switchingWeapon || weapon == null)
+        {
+            return;
+        }
+        _weaponToEquip = weapon;
         if (_weapon != null)
         {
             HolsterWeapon();
         }
-        if (weapon != null)
+        else
         {
-            if (weapon.transform.parent != _weaponHolder)
+            _switchingWeapon = true;
+            _animator.SetTrigger("Equip");
+        }
+    }
+    private void _EquipWeapon()
+    {
+        if (_weaponToEquip != null)
+        {
+            _weapon = _weaponToEquip;
+            _weaponToEquip = null;
+            if (_weapon.transform.parent != _weaponHolder)
             {
-                weapon.transform.SetParent(_weaponHolder);
-                weapon.transform.localPosition = weapon.rightHandPosition;
-                weapon.transform.localEulerAngles = weapon.rightHandRotation;
+                _weapon.transform.SetParent(_weaponHolder);
+                _weapon.transform.localPosition = _weapon.rightHandPosition;
+                _weapon.transform.localEulerAngles = _weapon.rightHandRotation;
             }
-            _rigManager.SetLeftHandGripData(weapon.leftHandPosition,weapon.leftHandRotation);
-            weapon.gameObject.SetActive(true);
-            _weapon = weapon;
+            _rigManager.SetLeftHandGripData(_weapon.leftHandPosition, _weapon.leftHandRotation);
+            _weapon.gameObject.SetActive(true);
+            _ammo = null;
+            for (int i = 0; i < _items.Count; i++)
+            {
+                if (_items[i] != null && _items[i].GetType() == typeof(Ammo) && _weapon.ammoID == _items[i].id)
+                {
+                    _ammo = (Ammo)_items[i];
+                    break;
+                }
+            }
         }
     }
 
-    public void HolsterWeapon()
+    public void OnEquip()
+    {
+        _EquipWeapon();
+    }
+
+    private void _HolsterWeapon()
     {
         if (_weapon != null)
         {
             _weapon.gameObject.SetActive(false);
             _weapon = null;
+            _ammo = null;
+        }
+    }
+
+    public void HolsterWeapon()
+    {
+        if (_switchingWeapon)
+        {
+            return;
+        }
+
+        if (_weapon != null)
+        {
+            _switchingWeapon = true;
+            _animator.SetTrigger("Holster");
+        }
+    }
+
+    public void OnHolster()
+    {
+        _HolsterWeapon();
+        if (_weaponToEquip != null)
+        {
+            OnEquip();
         }
 
     }
@@ -98,6 +219,40 @@ public class Character : MonoBehaviour
     public void ApplyDamage(Character shooter, Transform hit, float damage)
     {
 
+    }
+
+    public void Reload()
+    {
+        if (_weapon != null && !_reloading && _weapon.ammo < _weapon.clipSize && _ammo != null && _ammo.amount > 0)
+        {
+            _animator.SetTrigger("Reload");
+            _reloading = true;
+        }
+    }
+
+    public void ReloadFinished()
+    {
+        if (_weapon != null && _weapon.ammo < _weapon.clipSize && _ammo != null && _ammo.amount > 0)
+        {
+            int amount = _weapon.clipSize - _weapon.ammo;
+            if (_ammo.amount < amount)
+            {
+                amount = _ammo.amount;
+            }
+            _ammo.amount -= amount;
+            _weapon.ammo += amount;
+        }
+        _reloading = false;
+    }
+
+    public void HolsterFinished()
+    {
+        _switchingWeapon = false;
+    }
+
+    public void EquipFinished()
+    {
+        _switchingWeapon = false;
     }
 
 }
