@@ -2,7 +2,6 @@ using LitJson;
 using StarterAssets;
 using System.Collections;
 using System.Collections.Generic;
-using Unity.Burst.Intrinsics;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Animations.Rigging;
@@ -12,9 +11,21 @@ using UnityEngine.Windows;
 
 public class Character : NetworkBehaviour
 {
-    public bool isLocalPlayer = false;
+
     [SerializeField] private string _id = ""; public string id { get { return _id; } }
     [SerializeField] private Transform _weaponHolder = null;
+
+    [Tooltip("Time required to pass before entering the fall state. Useful for walking down stairs")]
+    public float FallTimeout = 0.15f;
+
+    [Tooltip("Useful for rough ground")]
+    public float GroundedOffset = -0.14f;
+
+    [Tooltip("The radius of the grounded check. Should match the radius of the CharacterController")]
+    public float GroundedRadius = 0.28f;
+
+    [Tooltip("What layers the character uses as ground")]
+    public LayerMask GroundLayers;
 
     private Weapon _weapon = null; public Weapon weapon { get { return _weapon; } }
     private Ammo _ammo = null; public Ammo ammo { get { return _ammo; } }
@@ -39,18 +50,72 @@ public class Character : NetworkBehaviour
     private Vector2 _aimedMovingAnimationsInput = Vector2.zero;
     private float aimRigWieght = 0;
     private float leftHandWieght = 0;
-
     private Vector3 _aimTarget = Vector3.zero; public Vector3 aimTarget { get { return _aimTarget; } set { _aimTarget = value; } }
+    private Vector3 _lastAimTarget = Vector3.zero;
     private Vector3 _lastPosition = Vector3.zero;
 
     private ulong _clientID = 0;
     private bool _initialized = false;
 
+    private float _moveSpeed = 0; public float moveSpeed { get { return _moveSpeed; } set { _moveSpeed = value; } }
+    private float _moveSpeedBlend = 0;
+    private float _lastMoveSpeed = 0;
+
+    private Vector2 _aimedMoveSpeed = Vector2.zero;
+    private Vector2 _lastAimedMoveSpeed = Vector2.zero;
+    private bool _lastAiming = false;
+
+
+    [System.Serializable]
+    public struct Data
+    {
+        public Dictionary<string, int> items;
+        public List<string> itemsId;
+        public List<string> equippedIds;
+    }
+
+    public Data GetData()
+    {
+        Data data = new Data();
+        data.items = new Dictionary<string, int>();
+        data.itemsId = new List<string>();
+        data.equippedIds = new List<string>();
+        for (int i = 0; i < _items.Count; i++)
+        {
+            if (_items[i] == null)
+            {
+                continue;
+            }
+
+            int value = 0;
+            if (_items[i].GetType() == typeof(Weapon))
+            {
+                value = ((Weapon)_items[i]).ammo;
+            }
+            else if (_items[i].GetType() == typeof(Ammo))
+            {
+                value = ((Ammo)_items[i]).amount;
+            }
+
+            data.items.Add(_items[i].id, value);
+            data.itemsId.Add(_items[i].networkID);
+
+            if (_weapon != null && _items[i] == _weapon)
+            {
+                data.equippedIds.Add(_items[i].networkID);
+            }
+            else if (_ammo != null && _items[i] == _ammo)
+            {
+                data.equippedIds.Add(_items[i].networkID);
+            }
+        }
+        return data;
+    }
+
     private void Awake()
     {
         _ragdollRigidbodies = GetComponentsInChildren<Rigidbody>();
         _ragdollColliders = GetComponentsInChildren<Collider>();
-
         if (_ragdollRigidbodies != null)
         {
             for (int i = 0; i < _ragdollRigidbodies.Length; i++)
@@ -58,7 +123,6 @@ public class Character : NetworkBehaviour
                 _ragdollRigidbodies[i].mass *= 50;
             }
         }
-
         if (_ragdollColliders != null)
         {
             for (int i = 0; i < _ragdollColliders.Length; i++)
@@ -69,9 +133,10 @@ public class Character : NetworkBehaviour
         SetRagdollStatus(false);
         _rigManager = GetComponent<RigManager>();
         _animator = GetComponent<Animator>();
+        _fallTimeoutDelta = FallTimeout;
     }
 
-    public void InitializeServer(Dictionary<string, int> items, List<string> itemsId, ulong clientID)
+    public void InitializeServer(Dictionary<string, int> items, List<string> itemsId, List<string> equippedIds, ulong clientID)
     {
         if (_initialized)
         {
@@ -80,20 +145,19 @@ public class Character : NetworkBehaviour
         _initialized = true;
         _clientID = clientID;
         SetLayer(transform, LayerMask.NameToLayer("NetworkPlayer"));
-        _Initialize(items, itemsId);
+        _Initialize(items, itemsId, equippedIds);
     }
+
     [ClientRpc]
-    public void InitializeClientRpc(string itemsJson, string itemsIdJson, ulong clientID)
+    public void InitializeClientRpc(string itemsJson, string itemsIdJson, string equippedJson, ulong clientID)
     {
         if (_initialized)
         {
             return;
         }
-
         _initialized = true;
         _clientID = clientID;
-
-        if (isLocalPlayer)
+        if (IsOwner)
         {
             SetLayer(transform, LayerMask.NameToLayer("LocalPlayer"));
         }
@@ -103,16 +167,39 @@ public class Character : NetworkBehaviour
         }
         Dictionary<string, int> items = JsonMapper.ToObject<Dictionary<string, int>>(itemsJson);
         List<string> itemsId = JsonMapper.ToObject<List<string>>(itemsIdJson);
+        List<string> equippedIds = JsonMapper.ToObject<List<string>>(equippedJson);
         if (items != null && itemsId != null)
         {
-            _Initialize(items, itemsId);
+            _Initialize(items, itemsId, equippedIds);
         }
+    }
 
+    [ClientRpc]
+    public void InitializeClientRpc(string dataJson, ulong clientID, ClientRpcParams rpcParams = default)
+    {
+        if (_initialized)
+        {
+            return;
+        }
+        _initialized = true;
+        _clientID = clientID;
+        if (IsOwner)
+        {
+            SetLayer(transform, LayerMask.NameToLayer("LocalPlayer"));
+        }
+        else
+        {
+            SetLayer(transform, LayerMask.NameToLayer("NetworkPlayer"));
+        }
+        Data data = JsonMapper.ToObject<Data>(dataJson);
+        _Initialize(data.items, data.itemsId, data.equippedIds);
     }
 
     private void Update()
     {
         bool armed = _weapon != null;
+        GroundedCheck();
+        FreeFall();
 
         _aimLayerWieght = Mathf.Lerp(_aimLayerWieght, _switchingWeapon || (armed && (_aiming || _reloading)) ? 1f : 0f, 10f * Time.deltaTime);
         _animator.SetLayerWeight(1, _aimLayerWieght);
@@ -123,6 +210,12 @@ public class Character : NetworkBehaviour
         _rigManager.aimTarget = _aimTarget;
         _rigManager.aimWeight = aimRigWieght;
         _rigManager.leftHandWeight = leftHandWieght;
+
+        _moveSpeedBlend = Mathf.Lerp(_moveSpeedBlend, _moveSpeed, Time.deltaTime * 10f);
+        if (_moveSpeedBlend < 0.01f)
+        {
+            _moveSpeedBlend = 0f;
+        }
 
         if (_sprinting)
         {
@@ -137,13 +230,114 @@ public class Character : NetworkBehaviour
             _speedAnimationMultiplier = 2;
         }
 
-        Vector3 deltaPosition = transform.InverseTransformDirection(transform.position - _lastPosition).normalized;
+        if (IsOwner)
+        {
+            Vector3 deltaPosition = transform.InverseTransformDirection(transform.position - _lastPosition).normalized;
+            _aimedMoveSpeed = new Vector2(deltaPosition.x, deltaPosition.z) * _speedAnimationMultiplier;
+        }
 
-        _aimedMovingAnimationsInput = Vector2.Lerp(_aimedMovingAnimationsInput, new Vector2(deltaPosition.x, deltaPosition.z) * _speedAnimationMultiplier, 10f * Time.deltaTime);
+
+        _aimedMovingAnimationsInput = Vector2.Lerp(_aimedMovingAnimationsInput, _aimedMoveSpeed, 10f * Time.deltaTime);
         _animator.SetFloat("Speed_X", _aimedMovingAnimationsInput.x);
         _animator.SetFloat("Speed_Y", _aimedMovingAnimationsInput.y);
         _animator.SetFloat("Armed", armed ? 1f : 0f);
         _animator.SetFloat("Aimed", _aiming ? 1f : 0f);
+        _animator.SetFloat("Speed", _moveSpeedBlend);
+
+        if (IsOwner)
+        {
+            if (_aiming != _lastAiming)
+            {
+                OnAimingChangedServerRpc(_aiming);
+                _lastAiming = _aiming;
+            }
+            if (_aimTarget != _lastAimTarget)
+            {
+                OnAimTargetChangedServerRpc(_aimTarget);
+                _lastAimTarget = _aimTarget;
+            }
+            if (_aiming)
+            {
+                if (_aimedMoveSpeed != _lastAimedMoveSpeed)
+                {
+                    OnAimingMoveChangedServerRpc(_aimedMoveSpeed);
+                    _lastAimedMoveSpeed = _aimedMoveSpeed;
+                }
+            }
+            else
+            {
+                if (_moveSpeed != _lastMoveSpeed)
+                {
+                    OnMoveSpeedChangedServerRpc(moveSpeed);
+                    _lastMoveSpeed = _moveSpeed;
+                }
+            }
+        }
+
+    }
+
+    [ServerRpc]
+    public void OnAimTargetChangedServerRpc(Vector3 value)
+    {
+        _aimTarget = value;
+        OnAimTargetChangedClientRpc(value);
+    }
+
+    [ClientRpc]
+    public void OnAimTargetChangedClientRpc(Vector3 value)
+    {
+        if (!IsOwner)
+        {
+            _aimTarget = value;
+        }
+    }
+
+    [ServerRpc]
+    public void OnAimingMoveChangedServerRpc(Vector2 value)
+    {
+        _aimedMoveSpeed = value;
+        OnAimingMoveChangedClientRpc(value);
+    }
+
+    [ClientRpc]
+    public void OnAimingMoveChangedClientRpc(Vector2 value)
+    {
+        if (!IsOwner)
+        {
+            _aimedMoveSpeed = value;
+        }
+    }
+
+    [ServerRpc]
+    public void OnAimingChangedServerRpc(bool value)
+    {
+        _aiming = value;
+        OnAimingChangedClientRpc(value);
+    }
+
+    [ClientRpc]
+    public void OnAimingChangedClientRpc(bool value)
+    {
+        if (!IsOwner)
+        {
+            _aiming = value;
+        }
+    }
+
+    [ServerRpc]
+    public void OnMoveSpeedChangedServerRpc(float value)
+    {
+        _moveSpeed = value;
+        OnMoveSpeedChangedClientRpc(value);
+    }
+
+    [ClientRpc]
+    public void OnMoveSpeedChangedClientRpc(float value)
+    {
+        if (!IsOwner)
+        {
+            _moveSpeed = value;
+        }
     }
 
     private void LateUpdate()
@@ -162,46 +356,57 @@ public class Character : NetworkBehaviour
         }
     }
 
-
-    private void _Initialize(Dictionary<string, int> items, List<string> itemsId)
+    private void _Initialize(Dictionary<string, int> items, List<string> itemsId, List<string> equippedIds)
     {
         if (items != null && PrefabManager.singleton != null)
         {
             int i = 0;
-            int firstWeaponIndex = -1;
+            int equippedWeaponIndex = -1;
+            int equippedAmmoIndex = -1;
             foreach (var itemData in items)
             {
                 Item prefab = PrefabManager.singleton.GetItemPrefab(itemData.Key);
-                if (prefab != null && itemData.Value > 0)
+                if (prefab != null)
                 {
-                        Item item = Instantiate(prefab, transform);
-                    item.networkID = itemsId[i];
-                        if (item.GetType() == typeof(Weapon))
-                        {
-                            Weapon w = (Weapon)item;
-                            item.transform.SetParent(_weaponHolder);
-                            item.transform.localPosition = w.rightHandPosition;
-                            item.transform.localEulerAngles = w.rightHandRotation;
-                            if (firstWeaponIndex < 0)
-                            {
-                                firstWeaponIndex = _items.Count;
-                            }
 
-                        }
-                        else if (item.GetType() == typeof(Ammo))
+
+
+                    Item item = Instantiate(prefab, transform);
+                    item.networkID = itemsId[i];
+                    if (item.GetType() == typeof(Weapon))
+                    {
+                        Weapon w = (Weapon)item;
+                        item.transform.SetParent(_weaponHolder);
+                        item.transform.localPosition = w.rightHandPosition;
+                        item.transform.localEulerAngles = w.rightHandRotation;
+                        if (equippedIds.Contains(item.networkID) || equippedWeaponIndex < 0)
                         {
-                            Ammo a = (Ammo)item;
-                            a.amount = itemData.Value;
+                            equippedWeaponIndex = i;
                         }
-                        item.gameObject.SetActive(false);
-                        _items.Add(item);                 
+                    }
+                    else if (item.GetType() == typeof(Ammo))
+                    {
+                        Ammo a = (Ammo)item;
+                        a.amount = itemData.Value;
+                        if (equippedIds.Contains(item.networkID))
+                        {
+                            equippedAmmoIndex = i;
+                        }
+                    }
+
+                    item.gameObject.SetActive(false);
+                    _items.Add(item);
+                    i++;
                 }
-                i++;
             }
-            if (firstWeaponIndex >= 0 && _weapon == null)
+            if (equippedWeaponIndex >= 0 && _weapon == null)
             {
-                _weaponToEquip = (Weapon)_items[firstWeaponIndex];
+                _weaponToEquip = (Weapon)_items[equippedWeaponIndex];
                 OnEquip();
+            }
+            if (equippedAmmoIndex >= 0)
+            {
+                _EquipAmmo((Ammo)_items[equippedAmmoIndex]);
             }
         }
     }
@@ -219,7 +424,7 @@ public class Character : NetworkBehaviour
             {
                 PrevWeapon();
             }
-        }    
+        }
     }
 
     private void NextWeapon()
@@ -252,7 +457,6 @@ public class Character : NetworkBehaviour
         {
             EquipWeapon((Weapon)_items[first]);
         }
-
     }
 
     private void PrevWeapon()
@@ -278,7 +482,6 @@ public class Character : NetworkBehaviour
                     {
                         last = i;
                     }
-
                 }
             }
         }
@@ -286,9 +489,7 @@ public class Character : NetworkBehaviour
         {
             EquipWeapon((Weapon)_items[last]);
         }
-
     }
-
 
     public void EquipWeapon(Weapon weapon)
     {
@@ -307,6 +508,7 @@ public class Character : NetworkBehaviour
             _animator.SetTrigger("Equip");
         }
     }
+
     private void _EquipWeapon()
     {
         if (_weaponToEquip != null)
@@ -326,9 +528,28 @@ public class Character : NetworkBehaviour
             {
                 if (_items[i] != null && _items[i].GetType() == typeof(Ammo) && _weapon.ammoID == _items[i].id)
                 {
-                    _ammo = (Ammo)_items[i];
+                    _EquipAmmo((Ammo)_items[i]);
                     break;
                 }
+            }
+        }
+    }
+
+    private void _EquipAmmo(Ammo ammo)
+    {
+        if (ammo != null)
+        {
+            if (_weapon != null && _weapon.ammoID != ammo.id)
+            {
+                return;
+            }
+            _ammo = ammo;
+            if (_ammo.transform.parent != transform)
+            {
+                _ammo.transform.SetParent(transform);
+                _ammo.transform.localPosition = Vector3.zero;
+                _ammo.transform.localEulerAngles = Vector3.zero;
+                _ammo.gameObject.SetActive(false);
             }
         }
     }
@@ -354,7 +575,6 @@ public class Character : NetworkBehaviour
         {
             return;
         }
-
         if (_weapon != null)
         {
             _switchingWeapon = true;
@@ -369,7 +589,6 @@ public class Character : NetworkBehaviour
         {
             OnEquip();
         }
-
     }
 
     public void ApplyDamage(Character shooter, Transform hit, float damage)
@@ -384,13 +603,11 @@ public class Character : NetworkBehaviour
                 Destroy(_rigManager);
                 Destroy(GetComponent<RigBuilder>());
                 Destroy(_animator);
-
                 ThirdPersonController thirdPersonController = GetComponent<ThirdPersonController>();
                 if (thirdPersonController != null)
                 {
                     Destroy(thirdPersonController);
                 }
-
                 CharacterController controller = GetComponent<CharacterController>();
                 if (controller != null)
                 {
@@ -398,9 +615,7 @@ public class Character : NetworkBehaviour
                 }
                 Destroy(this);
             }
-
         }
-
     }
 
     public void Reload()
@@ -445,4 +660,78 @@ public class Character : NetworkBehaviour
             child.gameObject.layer = layer;
         }
     }
+
+    private float _fallTimeoutDelta;
+
+    private void GroundedCheck()
+    {
+        Vector3 spherePosition = new Vector3(transform.position.x, transform.position.y - GroundedOffset, transform.position.z);
+        _grounded = Physics.CheckSphere(spherePosition, GroundedRadius, GroundLayers, QueryTriggerInteraction.Ignore);
+        _animator.SetBool("Grounded", _grounded);
+    }
+
+    private void FreeFall()
+    {
+        if (_grounded)
+        {
+            _fallTimeoutDelta = FallTimeout;
+            _animator.SetBool("FreeFall", false);
+            _animator.SetBool("Jump", false);
+
+        }
+        else
+        {
+            if (_fallTimeoutDelta >= 0.0f)
+            {
+                _fallTimeoutDelta -= Time.deltaTime;
+            }
+            else
+            {
+                _animator.SetBool("FreeFall", true);
+            }
+        }
+    }
+
+    public void Jump()
+    {
+        _animator.SetBool("Jump", true);
+        JumpServerRpc();
+    }
+
+    [ServerRpc]
+    public void JumpServerRpc()
+    {
+        _animator.SetBool("Jump", true);
+        JumpClientRpc();
+    }
+
+    [ClientRpc]
+    public void JumpClientRpc()
+    {
+        if (!IsOwner)
+        {
+            _animator.SetBool("Jump", true);
+        }
+    }
+
+    private void OnFootstep(AnimationEvent animationEvent)
+    {/*
+        if (animationEvent.animatorClipInfo.weight > 0.5f)
+        {
+            if (FootstepAudioClips.Length > 0)
+            {
+                var index = Random.Range(0, FootstepAudioClips.Length);
+                AudioSource.PlayClipAtPoint(FootstepAudioClips[index], transform.TransformPoint(_controller.center), FootstepAudioVolume);
+            }
+        }*/
+    }
+
+    private void OnLand(AnimationEvent animationEvent)
+    {/*
+        if (animationEvent.animatorClipInfo.weight > 0.5f)
+        {
+            AudioSource.PlayClipAtPoint(LandingAudioClip, transform.TransformPoint(_controller.center), FootstepAudioVolume);
+        }*/
+    }
+
 }
