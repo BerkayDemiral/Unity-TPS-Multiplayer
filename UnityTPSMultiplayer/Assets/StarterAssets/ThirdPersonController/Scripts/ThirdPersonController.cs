@@ -140,6 +140,15 @@ namespace StarterAssets
 
             JumpAndGravity();
             
+            if (_input.holsterWeapon)
+            {
+                if (!_character.reloading && !_character.switchingWeapon)
+                {
+                    _character.HolsterWeapon();
+                }
+                _input.holsterWeapon = false;
+            }
+
             if (_input.walk)
             {
                 _input.walk = false;
@@ -160,16 +169,18 @@ namespace StarterAssets
                 targetSpeed = RunSpeed;
             }
          
-            if (_input.shoot && armed && !_character.reloading && _character.aiming && _character.weapon.Shoot(_character, CameraManager.singleton.AimTargetPoint))
+            if (_input.shoot)
             {
-                _rigManager.ApplyWeaponKick(_character.weapon.handKick, _character.weapon.bodyKick);
+                _character.Shoot();
             }
 
-
-            if (_input.reload && !_character.reloading)
+            if (_input.reload)
             {
-                _input.reload = false;
-                _character.Reload();
+                if (!_character.reloading && !_character.switchingWeapon)
+                {
+                    _character.Reload();
+                }
+                _input.reload = false; 
             }
 
             if (_input.switchWeapon != 0)
@@ -178,7 +189,7 @@ namespace StarterAssets
             }
 
             CameraManager.singleton.aiming = _character.aiming;           
-            _character.aimTarget = CameraManager.singleton.AimTargetPoint;
+            _character.aimTarget = CameraManager.singleton.aimTargetPoint;
 
             Move();
             Rotate();
@@ -191,7 +202,7 @@ namespace StarterAssets
         {
             if (_character.aiming)
             {
-                Vector3 aimTarget = CameraManager.singleton.AimTargetPoint;
+                Vector3 aimTarget = CameraManager.singleton.aimTargetPoint;
                 aimTarget.y = transform.position.y;
                 Vector3 aimDirection = (aimTarget - transform.position).normalized;
                 transform.forward = Vector3.Lerp(transform.forward, aimDirection, AimRotationSpeed * Time.deltaTime);
@@ -313,6 +324,7 @@ namespace StarterAssets
                 // Jump
                 if (_input.jump && _jumpTimeoutDelta <= 0.0f)
                 {
+                    _jumpTimeoutDelta = JumpTimeout;
                     _character.Jump();
                     // the square root of H * -2 * G = how much velocity needed to reach desired height
                     _verticalVelocity = Mathf.Sqrt(JumpHeight * -2f * Gravity);

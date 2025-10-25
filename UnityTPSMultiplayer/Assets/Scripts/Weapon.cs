@@ -5,7 +5,6 @@ using UnityEngine;
 public class Weapon : Item
 {
     [Header("Settings")]
-
     [SerializeField] private Handle _type = Handle.TwoHanded; public Handle type { get { return _type; } }
     [SerializeField] private string _ammoID = ""; public string ammoID { get { return _ammoID; } }
     [SerializeField] private float _damage = 1f;
@@ -24,13 +23,13 @@ public class Weapon : Item
 
     [Header("Prefabs")]
     [SerializeField] private Projectile _projectile = null;
+
     public enum Handle
     {
         OneHanded = 1, TwoHanded = 2
     }
 
     private float _fireTimer = 0;
-
     private int _ammo = 0; public int ammo { get { return _ammo; } set { _ammo = value; } }
 
     private void Awake()
@@ -41,7 +40,6 @@ public class Weapon : Item
     public bool Shoot(Character character, Vector3 target)
     {
         float passedTime = Time.realtimeSinceStartup - _fireTimer;
-
         if (_ammo > 0 && passedTime >= _fireRate)
         {
             _ammo -= 1;
@@ -56,5 +54,4 @@ public class Weapon : Item
         }
         return false;
     }
-
 }

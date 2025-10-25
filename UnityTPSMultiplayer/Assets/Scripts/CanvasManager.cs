@@ -27,5 +27,4 @@ public class CanvasManager : MonoBehaviour
         _clientButton.gameObject.SetActive(false);
         SessionManager.singleton.StartClient();
     }
-
 }

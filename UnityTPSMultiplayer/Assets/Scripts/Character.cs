@@ -2,10 +2,10 @@ using LitJson;
 using StarterAssets;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Burst.Intrinsics;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Animations.Rigging;
-using UnityEngine.InputSystem.XR;
 using UnityEngine.TextCore.Text;
 using UnityEngine.Windows;
 
@@ -201,6 +201,22 @@ public class Character : NetworkBehaviour
         GroundedCheck();
         FreeFall();
 
+        if (_shots.Count > 0 && !IsOwner)
+        {
+            if (_weapon != null && _weapon.networkID == _shots[0])
+            {
+                bool shoot = Shoot();
+                if (shoot)
+                {
+                    _shots.RemoveAt(0);
+                }
+            }
+            else
+            {
+                _shots.RemoveAt(0);
+            }
+        }
+
         _aimLayerWieght = Mathf.Lerp(_aimLayerWieght, _switchingWeapon || (armed && (_aiming || _reloading)) ? 1f : 0f, 10f * Time.deltaTime);
         _animator.SetLayerWeight(1, _aimLayerWieght);
 
@@ -368,9 +384,6 @@ public class Character : NetworkBehaviour
                 Item prefab = PrefabManager.singleton.GetItemPrefab(itemData.Key);
                 if (prefab != null)
                 {
-
-
-
                     Item item = Instantiate(prefab, transform);
                     item.networkID = itemsId[i];
                     if (item.GetType() == typeof(Weapon))
@@ -379,6 +392,7 @@ public class Character : NetworkBehaviour
                         item.transform.SetParent(_weaponHolder);
                         item.transform.localPosition = w.rightHandPosition;
                         item.transform.localEulerAngles = w.rightHandRotation;
+                        w.ammo = itemData.Value;
                         if (equippedIds.Contains(item.networkID) || equippedWeaponIndex < 0)
                         {
                             equippedWeaponIndex = i;
@@ -497,6 +511,10 @@ public class Character : NetworkBehaviour
         {
             return;
         }
+        if (IsOwner)
+        {
+            EquipWeaponServerRpc(weapon.networkID);
+        }
         _weaponToEquip = weapon;
         if (_weapon != null)
         {
@@ -506,6 +524,43 @@ public class Character : NetworkBehaviour
         {
             _switchingWeapon = true;
             _animator.SetTrigger("Equip");
+        }
+    }
+
+    [ServerRpc]
+    public void EquipWeaponServerRpc(string networkID)
+    {
+        EquipWeaponSync(networkID);
+        EquipWeaponClientRpc(networkID);
+    }
+
+    [ClientRpc]
+    public void EquipWeaponClientRpc(string networkID)
+    {
+        if (!IsOwner)
+        {
+            EquipWeaponSync(networkID);
+        }
+    }
+
+    private void EquipWeaponSync(string networkID)
+    {
+        Weapon weapon = null;
+        for (int i = 0; i < _items.Count; i++)
+        {
+            if (_items[i] != null && _items[i].networkID == networkID && _items[i].GetType() == typeof(Weapon))
+            {
+                weapon = (Weapon)_items[i];
+                break;
+            }
+        }
+        if (weapon != null)
+        {
+            EquipWeapon(weapon);
+        }
+        else
+        {
+            // Problem or Error
         }
     }
 
@@ -577,8 +632,40 @@ public class Character : NetworkBehaviour
         }
         if (_weapon != null)
         {
+            if (IsOwner)
+            {
+                HolsterWeaponServerRpc(_weapon.networkID);
+            }
             _switchingWeapon = true;
             _animator.SetTrigger("Holster");
+        }
+    }
+
+    [ServerRpc]
+    public void HolsterWeaponServerRpc(string weaponID)
+    {
+        HolsterWeaponSync(weaponID);
+        HolsterWeaponClientRpc(weaponID);
+    }
+
+    [ClientRpc]
+    public void HolsterWeaponClientRpc(string weaponID)
+    {
+        if (!IsOwner)
+        {
+            HolsterWeaponSync(weaponID);
+        }
+    }
+
+    public void HolsterWeaponSync(string weaponID)
+    {
+        if (_weapon != null && _weapon.networkID == weaponID)
+        {
+            HolsterWeapon();
+        }
+        else
+        {
+            // Problem or Error
         }
     }
 
@@ -622,8 +709,40 @@ public class Character : NetworkBehaviour
     {
         if (_weapon != null && !_reloading && _weapon.ammo < _weapon.clipSize && _ammo != null && _ammo.amount > 0)
         {
+            if (IsOwner)
+            {
+                ReloadServerRpc(weapon.networkID, _ammo.networkID);
+            }
             _animator.SetTrigger("Reload");
             _reloading = true;
+        }
+    }
+
+    [ServerRpc]
+    public void ReloadServerRpc(string weaponID, string ammoID)
+    {
+        ReloadSync(weaponID, ammoID);
+        ReloadClientRpc(weaponID, ammoID);
+    }
+
+    [ClientRpc]
+    public void ReloadClientRpc(string weaponID, string ammoID)
+    {
+        if (!IsOwner)
+        {
+            ReloadSync(weaponID, ammoID);
+        }
+    }
+
+    private void ReloadSync(string weaponID, string ammoID)
+    {
+        if (_weapon != null && _ammo != null && _weapon.networkID == weaponID && _ammo.networkID == ammoID)
+        {
+            Reload();
+        }
+        else
+        {
+            // Problem or Error
         }
     }
 
@@ -676,8 +795,6 @@ public class Character : NetworkBehaviour
         {
             _fallTimeoutDelta = FallTimeout;
             _animator.SetBool("FreeFall", false);
-            _animator.SetBool("Jump", false);
-
         }
         else
         {
@@ -694,14 +811,14 @@ public class Character : NetworkBehaviour
 
     public void Jump()
     {
-        _animator.SetBool("Jump", true);
+        _animator.SetTrigger("Jump");
         JumpServerRpc();
     }
 
     [ServerRpc]
     public void JumpServerRpc()
     {
-        _animator.SetBool("Jump", true);
+        _animator.SetTrigger("Jump");
         JumpClientRpc();
     }
 
@@ -710,7 +827,55 @@ public class Character : NetworkBehaviour
     {
         if (!IsOwner)
         {
-            _animator.SetBool("Jump", true);
+            _animator.SetTrigger("Jump");
+        }
+    }
+
+    private List<string> _shots = new List<string>();
+
+    public bool Shoot()
+    {
+        if (_weapon != null && !reloading && _aiming && _weapon.Shoot(this, _aimTarget))
+        {
+            if (IsOwner)
+            {
+                ShootServerRpc(_weapon.networkID);
+            }
+            _rigManager.ApplyWeaponKick(_weapon.handKick, _weapon.bodyKick);
+            return true;
+        }
+        return false;
+    }
+
+    [ServerRpc]
+    public void ShootServerRpc(string weaponID)
+    {
+        ShootSync(weaponID);
+        ShootClientRpc(weaponID);
+    }
+
+    [ClientRpc]
+    public void ShootClientRpc(string weaponID)
+    {
+        if (!IsOwner)
+        {
+            ShootSync(weaponID);
+        }
+    }
+
+    public void ShootSync(string weaponID)
+    {
+        if (_weapon != null && _weapon.networkID == weaponID)
+        {
+            bool shoot = Shoot();
+            if (!shoot)
+            {
+                _shots.Add(weaponID);
+            }
+        }
+        else
+        {
+            // Problem or Error
         }
     }
 

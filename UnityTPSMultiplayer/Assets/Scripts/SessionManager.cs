@@ -6,8 +6,8 @@ using LitJson;
 
 public class SessionManager : NetworkBehaviour
 {
-    private static SessionManager _singleton = null;
 
+    private static SessionManager _singleton = null;
     public static SessionManager singleton
     {
         get
@@ -20,7 +20,7 @@ public class SessionManager : NetworkBehaviour
         }
     }
 
-    private Dictionary <ulong, Character> _characters = new Dictionary<ulong, Character>();
+    private Dictionary<ulong, Character> _characters = new Dictionary<ulong, Character>();
 
     public void StartServer()
     {
@@ -42,7 +42,6 @@ public class SessionManager : NetworkBehaviour
         clientRpcParams.Send.TargetClientIds = target;
         OnClientConnectedClientRpc(clientRpcParams);
     }
-
 
     [ClientRpc]
     public void OnClientConnectedClientRpc(ClientRpcParams rpcParams = default)
@@ -96,12 +95,10 @@ public class SessionManager : NetworkBehaviour
                 }
             }
         }
-
     }
 
     public void StartClient()
     {
         NetworkManager.Singleton.StartClient();
     }
-
 }

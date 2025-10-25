@@ -2,14 +2,16 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Animations.Rigging;
+
 public class RigManager : MonoBehaviour
 {
+
     [SerializeField] private MultiAimConstraint _rightHand = null;
     [SerializeField] private TwoBoneIKConstraint _leftHand = null;
     [SerializeField] private MultiAimConstraint _body = null;
     [SerializeField] private Transform _aimTarget = null;
-    [SerializeField] private Vector3 _weaponHandKickDirection = new Vector3(0,0,0);
-    [SerializeField] private Vector3 _weaponBodyKickDirection = new Vector3(-1,0,0);
+    [SerializeField] private Vector3 _weaponHandKickDirection = new Vector3(0, 0, 0);
+    [SerializeField] private Vector3 _weaponBodyKickDirection = new Vector3(-1, 0, 0);
 
     public Vector3 aimTarget { set { _aimTarget.position = value; } }
     public float leftHandWeight { set { _leftHand.weight = value; } }
@@ -49,6 +51,5 @@ public class RigManager : MonoBehaviour
         {
             _body.data.offset = Vector3.Lerp(_body.data.offset, _originalBodyOffset, 10f * Time.deltaTime);
         }
-
     }
 }

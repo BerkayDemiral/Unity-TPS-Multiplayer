@@ -4,11 +4,11 @@ using UnityEngine;
 
 public class PrefabManager : MonoBehaviour
 {
+
     [SerializeField] private Item[] _items = null;
     [SerializeField] private Character[] _charactors = null;
 
     private static PrefabManager _singleton = null;
-
     public static PrefabManager singleton
     {
         get
@@ -33,9 +33,9 @@ public class PrefabManager : MonoBehaviour
                 }
             }
         }
-
         return null;
     }
+
     public Character GetCharacterPrefab(string id)
     {
         if (_charactors != null)
@@ -48,7 +48,6 @@ public class PrefabManager : MonoBehaviour
                 }
             }
         }
-
         return null;
     }
 }

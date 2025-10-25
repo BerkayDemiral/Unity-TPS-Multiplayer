@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class Projectile : MonoBehaviour
 {
+
     [SerializeField] private float _speed = 20;
 
     [Header("Prefabs")]
@@ -24,7 +25,6 @@ public class Projectile : MonoBehaviour
     {
         if (_initialized) { return; }
         _initialized = true;
-        _shooter = GetComponent<Character>();
 
         _rigidbody = GetComponent<Rigidbody>();
         if (_rigidbody == null)
@@ -43,10 +43,10 @@ public class Projectile : MonoBehaviour
         _collider.tag = "Projectile";
     }
 
-    public void Initialize(Character shooetr, Vector3 target, float damage)
+    public void Initialize(Character shooter, Vector3 target, float damage)
     {
         Initialize();
-        _shooter = shooetr;
+        _shooter = shooter;
         _damage = damage;
         transform.LookAt(target);
         _rigidbody.velocity = transform.forward.normalized * _speed;
@@ -55,11 +55,12 @@ public class Projectile : MonoBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
-        if ((_shooter != null && collision.transform.root == _shooter.transform.root) || collision.gameObject.tag =="Projectile" )
+        if ((_shooter != null && collision.transform.root == _shooter.transform.root) || collision.gameObject.tag == "Projectile")
         {
             Physics.IgnoreCollision(collision.collider, _collider);
             return;
         }
+
         Character character = collision.transform.root.GetComponent<Character>();
         if (character != null)
         {
@@ -71,8 +72,9 @@ public class Projectile : MonoBehaviour
             {
                 Transform impact = Instantiate(_defaultImpact, collision.contacts[0].point, Quaternion.FromToRotation(Vector3.up, collision.contacts[0].normal));
                 Destroy(impact.gameObject, 30f);
-            }      
+            }
         }
         Destroy(gameObject);
     }
+
 }
