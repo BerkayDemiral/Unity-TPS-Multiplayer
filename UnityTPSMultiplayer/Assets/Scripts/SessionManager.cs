@@ -25,13 +25,7 @@ public class SessionManager : NetworkBehaviour
     public void StartServer()
     {
         NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
-        NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnect;
         NetworkManager.Singleton.StartServer();
-    }
-
-    private void OnClientDisconnect(ulong clientId)
-    {
-        _characters.Remove(clientId);
     }
 
     private void OnClientConnected(ulong clientId)
@@ -64,7 +58,7 @@ public class SessionManager : NetworkBehaviour
 
             _characters.Add(serverRpcParams.Receive.SenderClientId, character);
 
-            Dictionary<string, int> items = new Dictionary<string, int> { { "Scar", 1 }, { "AKM", 1 }, { "7.62x39mm", 1000 } };
+            Dictionary<string, int> items = new Dictionary<string, int> { { "Scar", 30 }, { "7.62x39mm", 1000 } };
             List<string> itemsId = new List<string>();
             List<string> equippedIds = new List<string>();
             for (int i = 0; i < items.Count; i++)
@@ -76,8 +70,27 @@ public class SessionManager : NetworkBehaviour
             string itemsIdJson = JsonMapper.ToJson(itemsId);
             string equippedJson = JsonMapper.ToJson(equippedIds);
 
+            Item[] allItems = FindObjectsByType<Item>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+            List<Item.Data> itemsOnGround = new List<Item.Data>();
+            if (allItems != null)
+            {
+                for (int i = 0; i < allItems.Length; i++)
+                {
+                    if (string.IsNullOrEmpty(allItems[i].networkID))
+                    {
+                        allItems[i].networkID = System.Guid.NewGuid().ToString();
+                    }
+                    if (allItems[i].transform.parent == null)
+                    {
+                        itemsOnGround.Add(allItems[i].GetData());
+                    }
+                }
+            }
+            string itemsOnGroundJson = JsonMapper.ToJson(itemsOnGround);
+
+
             character.InitializeServer(items, itemsId, equippedIds, serverRpcParams.Receive.SenderClientId);
-            character.InitializeClientRpc(itemsJson, itemsIdJson, equippedJson, serverRpcParams.Receive.SenderClientId);
+            character.InitializeClientRpc(itemsJson, itemsIdJson, equippedJson, itemsOnGroundJson, serverRpcParams.Receive.SenderClientId);
 
             foreach (var client in _characters)
             {
@@ -94,6 +107,7 @@ public class SessionManager : NetworkBehaviour
                     client.Value.InitializeClientRpc(json, client.Key, clientRpcParams);
                 }
             }
+
         }
     }
 
@@ -101,4 +115,5 @@ public class SessionManager : NetworkBehaviour
     {
         NetworkManager.Singleton.StartClient();
     }
+
 }

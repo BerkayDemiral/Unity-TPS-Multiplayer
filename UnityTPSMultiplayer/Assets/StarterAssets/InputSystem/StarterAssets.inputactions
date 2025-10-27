@@ -42,6 +42,15 @@
                     "initialStateCheck": false
                 },
                 {
+                    "name": "PickUpItem",
+                    "type": "Button",
+                    "id": "9cdf34cd-239c-4d76-b00c-04ad3c9c7743",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
                     "name": "HolsterWeapon",
                     "type": "Button",
                     "id": "a76d9514-b35c-4ef5-a068-6eab49c69dfd",
@@ -402,6 +411,28 @@
                     "processors": "",
                     "groups": "Gamepad",
                     "action": "HolsterWeapon",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "fb6632c5-4b9b-420e-b4d5-6098fc679943",
+                    "path": "<Keyboard>/f",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "KeyboardMouse",
+                    "action": "PickUpItem",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "10b02e89-ade4-42be-afaa-32b902b26caa",
+                    "path": "<Gamepad>/buttonSouth",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Gamepad",
+                    "action": "PickUpItem",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

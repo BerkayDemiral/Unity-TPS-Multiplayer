@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class Weapon : Item
 {
+
     [Header("Settings")]
     [SerializeField] private Handle _type = Handle.TwoHanded; public Handle type { get { return _type; } }
     [SerializeField] private string _ammoID = ""; public string ammoID { get { return _ammoID; } }
@@ -32,8 +33,9 @@ public class Weapon : Item
     private float _fireTimer = 0;
     private int _ammo = 0; public int ammo { get { return _ammo; } set { _ammo = value; } }
 
-    private void Awake()
+    public override void Awake()
     {
+        base.Awake();
         _fireTimer += Time.realtimeSinceStartup;
     }
 
@@ -54,4 +56,5 @@ public class Weapon : Item
         }
         return false;
     }
+
 }

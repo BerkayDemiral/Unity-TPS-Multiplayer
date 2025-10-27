@@ -10,6 +10,8 @@ GameObject:
   m_Component:
   - component: {fileID: 6744354573170381625}
   - component: {fileID: 5982959728032096571}
+  - component: {fileID: 6825662234801640367}
+  - component: {fileID: 3663840347018660746}
   m_Layer: 0
   m_Name: AKM
   m_TagString: Untagged
@@ -63,6 +65,54 @@ MonoBehaviour:
   _flash: {fileID: 8719323417852926323}
   _projectile: {fileID: 7020673490577521907, guid: cfcd2133aa27f0447b3886c6526869eb,
     type: 3}
+--- !u!65 &6825662234801640367
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5150762349904276746}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.08371788, y: 0.2838005, z: 0.9332}
+  m_Center: {x: -0.004908651, y: -0.057499662, z: 0.033399984}
+--- !u!54 &3663840347018660746
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5150762349904276746}
+  serializedVersion: 4
+  m_Mass: 1
+  m_Drag: 0
+  m_AngularDrag: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 0
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!1 &5209275853474803537
 GameObject:
   m_ObjectHideFlags: 0

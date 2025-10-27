@@ -89,7 +89,7 @@ namespace StarterAssets
         private Character _character;
         private const float _threshold = 0.01f;
         private float targetSpeed = 2;
-        
+
         private bool IsCurrentDeviceMouse
         {
             get
@@ -105,7 +105,7 @@ namespace StarterAssets
 
         private void Start()
         {
-            
+
             _rigManager = GetComponent<RigManager>();
             _character = GetComponent<Character>();
             _controller = GetComponent<CharacterController>();
@@ -139,7 +139,7 @@ namespace StarterAssets
             _character.sprinting = _input.sprint && _character.aiming == false;
 
             JumpAndGravity();
-            
+
             if (_input.holsterWeapon)
             {
                 if (!_character.reloading && !_character.switchingWeapon)
@@ -155,7 +155,7 @@ namespace StarterAssets
                 _character.walking = !_character.walking;
             }
 
-            
+
             if (_character.sprinting)
             {
                 targetSpeed = SprintSpeed;
@@ -168,7 +168,7 @@ namespace StarterAssets
             {
                 targetSpeed = RunSpeed;
             }
-         
+
             if (_input.shoot)
             {
                 _character.Shoot();
@@ -180,7 +180,7 @@ namespace StarterAssets
                 {
                     _character.Reload();
                 }
-                _input.reload = false; 
+                _input.reload = false;
             }
 
             if (_input.switchWeapon != 0)
@@ -188,14 +188,37 @@ namespace StarterAssets
                 _character.ChangeWeapon(_input.switchWeapon);
             }
 
-            CameraManager.singleton.aiming = _character.aiming;           
+            CameraManager.singleton.aiming = _character.aiming;
             _character.aimTarget = CameraManager.singleton.aimTargetPoint;
+
+            float maxPickupDistance = 3f;
+            Item itemToPick = null;
+            if (CameraManager.singleton.aimTargetObject != null && CameraManager.singleton.aimTargetObject.tag == "Item" && Vector3.Distance(CameraManager.singleton.aimTargetObject.position, transform.position) <= maxPickupDistance)
+            {
+                itemToPick = CameraManager.singleton.aimTargetObject.GetComponent<Item>();
+                if (itemToPick.canBePickedUp == false)
+                {
+                    itemToPick = null;
+                }
+            }
+            if (CanvasManager.singleton.itemToPick != itemToPick)
+            {
+                CanvasManager.singleton.itemToPick = itemToPick;
+            }
+            if (_input.pickUpItem)
+            {
+                if (CanvasManager.singleton.itemToPick != null)
+                {
+                    _character.PickupItem(CanvasManager.singleton.itemToPick.networkID);
+                }
+                _input.pickUpItem = false;
+            }
 
             Move();
             Rotate();
         }
 
-        
+
 
 
         private void Rotate()
@@ -225,7 +248,7 @@ namespace StarterAssets
             _animIDMotionSpeed = Animator.StringToHash("MotionSpeed");
         }
 
-        
+
 
         private void CameraRotation()
         {
