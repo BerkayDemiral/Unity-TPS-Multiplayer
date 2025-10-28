@@ -19,6 +19,7 @@ namespace StarterAssets
 		public float switchWeapon;
 		public bool holsterWeapon;
 		public bool pickUpItem;
+		public bool inventory;
 
 		[Header("Movement Settings")]
 		public bool analogMovement;
@@ -38,14 +39,22 @@ namespace StarterAssets
         {
             ShootInput(value.isPressed);
         }
+
         public void OnWalk(InputValue value)
         {
             WalkInput(value.isPressed);
         }
+
         public void OnReload(InputValue value)
         {
             ReloadInput(value.isPressed);
         }
+
+        public void OnInventory(InputValue value)
+        {
+            InventoryInput(value.isPressed);
+        }
+
         public void OnPickUpItem(InputValue value)
         {
             PickUpItemInput(value.isPressed);
@@ -99,6 +108,11 @@ namespace StarterAssets
         public void AimInput(bool newAimState)
         {
             aim = newAimState;
+        }
+
+        public void InventoryInput(bool newState)
+        {
+            inventory = newState;
         }
 
         public void HolsterWeaponInput(bool newState)

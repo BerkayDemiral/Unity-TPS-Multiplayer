@@ -58,7 +58,7 @@ public class SessionManager : NetworkBehaviour
 
             _characters.Add(serverRpcParams.Receive.SenderClientId, character);
 
-            Dictionary<string, int> items = new Dictionary<string, int> { { "Scar", 30 }, { "7.62x39mm", 1000 } };
+            Dictionary<string, (string, int)> items = new Dictionary<string, (string, int)> { { "0", ("Scar", 30) }, { "1", ("7.62x39mm", 1000) } };
             List<string> itemsId = new List<string>();
             List<string> equippedIds = new List<string>();
             for (int i = 0; i < items.Count; i++)
