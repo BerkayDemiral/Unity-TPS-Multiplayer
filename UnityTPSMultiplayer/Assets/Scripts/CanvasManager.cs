@@ -157,14 +157,7 @@ public class CanvasManager : MonoBehaviour
         if (_itemToPick != null)
         {
             _itemPickupName.text = _itemToPick.id;
-            if (_itemToPick.GetType() == typeof(Ammo))
-            {
-                _itemPickupAmount.text = "x" + ((Ammo)_itemToPick).amount.ToString();
-            }
-            else
-            {
-                _itemPickupAmount.text = "x1";
-            }
+            _itemPickupAmount.text = "x" + _itemToPick.GetAmount().ToString();
             _itemPickupPanel.gameObject.SetActive(true);
         }
         else
@@ -235,6 +228,7 @@ public class CanvasManager : MonoBehaviour
             }
         }
 
+        _characterLootTarget = null;
         _isInventoryOpen = false;
         Cursor.lockState = CursorLockMode.Locked;
         _inventoryPanel.gameObject.SetActive(false);
