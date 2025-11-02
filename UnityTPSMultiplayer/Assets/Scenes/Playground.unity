@@ -1032,8 +1032,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ab82b3c994be5c9429d92aa9c566b9f1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _serverButton: {fileID: 1961306803}
-  _clientButton: {fileID: 2146832506}
   _itemPickupPanel: {fileID: 1082147794}
   _itemPickupBox: {fileID: 45082811}
   _itemPickupName: {fileID: 1494052415}
@@ -3552,7 +3550,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1961306802
 RectTransform:
   m_ObjectHideFlags: 0
@@ -3946,7 +3944,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &2146832505
 RectTransform:
   m_ObjectHideFlags: 0
