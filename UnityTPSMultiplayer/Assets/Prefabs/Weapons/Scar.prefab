@@ -57,10 +57,12 @@ MonoBehaviour:
   _clipSize: 30
   _handKick: 5
   _bodyKick: 5
-  _leftHandPosition: {x: 0.07600003, y: -0.3250001, z: -0.0009999871}
-  _leftHandRotation: {x: 18.781, y: -176.647, z: 218.595}
-  _rightHandPosition: {x: 0.0073, y: -0.2231, z: -0.0339}
-  _rightHandRotation: {x: 77.455, y: 3.271, z: 178.527}
+  rigData:
+  - chatacterId: Bot
+    leftHandPosition: {x: 0.094, y: -0.311, z: -0.06}
+    leftHandRotation: {x: 59.61299, y: -177.92865, z: -107.77063}
+    rightHandPosition: {x: 0.0148, y: -0.1817, z: -0.0767}
+    rightHandRotation: {x: 90, y: 180, z: 0}
   _muzzle: {fileID: 4643333445137454873}
   _flash: {fileID: 4487757053005524863}
   _projectile: {fileID: 7020673490577521907, guid: cfcd2133aa27f0447b3886c6526869eb,
