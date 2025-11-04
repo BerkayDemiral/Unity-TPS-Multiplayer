@@ -161,6 +161,29 @@ public class Character : NetworkBehaviour
         _networkObject.DontDestroyWithOwner = false;
     }
 
+    public void InitializeDummy(string weaponID)
+    {
+        InitializeComponents();
+        if (_weapon != null)
+        {
+            Destroy(_weapon.gameObject);
+            _weapon = null;
+        }
+        Item prefab = PrefabManager.singleton.GetItemPrefab(weaponID);
+        if (prefab != null && prefab.GetType() == typeof(Weapon))
+        {
+            Item item = Instantiate(prefab, transform);
+            item.Initialize();
+            item.SetOnGroundStatus(false);
+            Weapon w = (Weapon)item;
+            item.transform.SetParent(_weaponHolder);
+            item.transform.localPosition = w.RightHandPosition(_id);
+            item.transform.localEulerAngles = w.RightHandRotation(_id);
+            _rigManager.SetLeftHandGripData(w.LeftHandPosition(_id), w.LeftHandRotation(_id));
+            _weapon = w;
+        }
+    }
+
     public void InitializeServer(Dictionary<string, (string, int)> items, List<string> itemsId, List<string> equippedIds, ulong clientID)
     {
         if (_initialized)

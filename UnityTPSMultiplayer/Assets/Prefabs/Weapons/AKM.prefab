@@ -57,10 +57,17 @@ MonoBehaviour:
   _clipSize: 30
   _handKick: 5
   _bodyKick: 5
-  _leftHandPosition: {x: 0.07600003, y: -0.3250001, z: -0.0009999871}
-  _leftHandRotation: {x: 18.781, y: -176.647, z: 218.595}
-  _rightHandPosition: {x: 0.0073, y: -0.2231, z: -0.0339}
-  _rightHandRotation: {x: 77.455, y: 3.271, z: 178.527}
+  rigData:
+  - chatacterId: Bot
+    leftHandPosition: {x: 0.0648, y: -0.3672, z: -0.0946}
+    leftHandRotation: {x: 56.853573, y: -158.47162, z: -124.98534}
+    rightHandPosition: {x: 0.008, y: -0.22, z: -0.076}
+    rightHandRotation: {x: 90, y: 180, z: 0}
+  - chatacterId: Soldier
+    leftHandPosition: {x: -0.072, y: 0.3637, z: 0.1336}
+    leftHandRotation: {x: -5.218689, y: -114.56688, z: 72.07511}
+    rightHandPosition: {x: -0.0737, y: 0.2481, z: 0.0506}
+    rightHandRotation: {x: -90, y: 90, z: 0}
   _muzzle: {fileID: 1047619733701665404}
   _flash: {fileID: 8719323417852926323}
   _projectile: {fileID: 7020673490577521907, guid: cfcd2133aa27f0447b3886c6526869eb,

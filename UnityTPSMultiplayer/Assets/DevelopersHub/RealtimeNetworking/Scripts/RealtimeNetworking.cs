@@ -21,7 +21,7 @@ namespace DevelopersHub.RealtimeNetworking.Client
         public static event EquipmentsCallback OnGetEquipments;
         public static event SetCharacterSelectedCallback OnSetCharacterSelected;
         public static event SetEquipmentStatusCallback OnEquipCharacterEquipment;
-        public static event SetEquipmentStatusCallback OnUnquipCharacterEquipment;
+        public static event SetEquipmentStatusCallback OnUnEquipCharacterEquipment;
 
         // Room
         public static event GetRoomsCallback OnGetRoomsList;
@@ -1413,10 +1413,10 @@ namespace DevelopersHub.RealtimeNetworking.Client
                     packet.Dispose();
                     break;
                 case InternalID.CHARACTER_UNEQUIP:
-                    if (OnUnquipCharacterEquipment != null)
+                    if (OnUnEquipCharacterEquipment != null)
                     {
                         int cuqRes = packet.ReadInt();
-                        OnUnquipCharacterEquipment.Invoke((SetEquipmentStatusResponse)cuqRes);
+                        OnUnEquipCharacterEquipment.Invoke((SetEquipmentStatusResponse)cuqRes);
                     }
                     packet.Dispose();
                     break;
@@ -1929,16 +1929,16 @@ namespace DevelopersHub.RealtimeNetworking.Client
         {
             if (!instance._connected)
             {
-                if (OnUnquipCharacterEquipment != null)
+                if (OnUnEquipCharacterEquipment != null)
                 {
-                    OnUnquipCharacterEquipment.Invoke(SetEquipmentStatusResponse.NOT_CONNECTED);
+                    OnUnEquipCharacterEquipment.Invoke(SetEquipmentStatusResponse.NOT_CONNECTED);
                 }
             }
             else if (!instance._authenticated)
             {
-                if (OnUnquipCharacterEquipment != null)
+                if (OnUnEquipCharacterEquipment != null)
                 {
-                    OnUnquipCharacterEquipment.Invoke(SetEquipmentStatusResponse.NOT_AUTHENTICATED);
+                    OnUnEquipCharacterEquipment.Invoke(SetEquipmentStatusResponse.NOT_AUTHENTICATED);
                 }
             }
             else
