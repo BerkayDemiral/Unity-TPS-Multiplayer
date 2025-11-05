@@ -111,6 +111,7 @@ public class MenuManager : MonoBehaviour
             _matchmakingStart.gameObject.SetActive(true);
             _openCharacters.gameObject.SetActive(true);
             _username.text = accountData.username;
+            SessionManager.accountID = accountData.id;
         }
         else
         {
