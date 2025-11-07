@@ -40,14 +40,10 @@ UserSettings/
 .vs/
 .idea/
 .gradle/
-*.csproj
+# *.csproj
 *.unityproj
-*.sln
 *.suo
 *.user
-*.userprefs
-*.DotSettings.user
-/[Aa]ssets/Plugins/Editor/JetBrains*
 
 # Crash and debug logs
 sysinfo.txt
